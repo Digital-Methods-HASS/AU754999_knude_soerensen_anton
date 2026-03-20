@@ -1,0 +1,234 @@
+---
+title: "Make Countries Move"
+author: "Anton Knude Sørensen (Adela originally)"
+date: "20/3/2026"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#  Explore global development with R
+In this exercise, you will load a filtered `gapminder` dataset -  with a subset of data on global development from 1952 - 2007 in increments of 5 years - to capture the period between the Second World War and the Global Financial Crisis. 
+
+**Your task: Explore the data and visualise it in both static and animated ways, providing answers and solutions to 7 questions/tasks within this script.** 
+
+- **Submit to Github this script with solutions and its knitted version.**  
+- **Submit to Brightspace a document with the (1) URL of this script and its knitted version in Github (2) answer of 250 words and a (3) visualisation of the Final Question**
+
+## Get the necessary packages
+First, start with installing and activating the relevant packages `tidyverse`, `gganimate`, and `gapminder` if you do not have them already. 
+*Pay attention to what warning messages you get when installing `gganimate`, as your computer might need other packages than `gifski` and `av`*
+
+```{r libraries, echo = TRUE}
+#install.packages("gganimate")
+#install.packages("gifski")
+#install.packages("av")
+#install.packages("gapminder")
+library(tidyverse)
+library(gganimate)
+library(gifski)
+library(av)
+library(gapminder)
+```
+
+## Look at the data and tackle the tasks
+First, see which specific years are actually represented in the dataset and what variables are being recorded for each country. Note that when you run the cell below, Rmarkdown will give you two results - one for each line - that you can flip between.
+```{r}
+str(gapminder)
+unique(gapminder$year)
+?gapminder
+head(gapminder)
+```
+
+The dataset contains information on each country in the sampled year, its continent, life expectancy, population, and GDP per capita.
+
+Let's plot all the countries in 1952.
+```{r 1952}
+theme_set(theme_bw())  # set theme to white background for better visibility
+
+ggplot(subset(gapminder, year == 1952), aes(gdpPercap, lifeExp, size = pop)) +
+  geom_point(aes(color = continent)) +
+  scale_x_log10() +
+  scale_size_continuous(labels = scales::comma)+
+  ggtitle("World in 1952") +
+  labs(x = "GDP per capita",
+       y = "Life expectancy")+
+  theme(text = element_text(size=18))+
+  theme_bw()
+```
+
+...
+
+We see an interesting spread with an outlier to the right. Explore who it is so you can answer question 2 below!
+
+
+Next, you can generate a similar plot for 2007 and compare the differences
+```{r 2007}
+ggplot(subset(gapminder, year == 2007), aes(gdpPercap, lifeExp, size = pop)) +
+  geom_point(aes(color = continent)) +
+  scale_x_log10() +
+  scale_size_continuous(labels = scales::comma)+
+  ggtitle("World in 2007") +
+  labs(x = "GDP per capita",
+       y = "Life expectancy")
+
+subset(gapminder, year == 1952) %>% 
+  arrange(desc(gdpPercap)) %>% 
+  head()
+
+subset(gapminder, year == 2007) %>% 
+  arrange(desc(gdpPercap)) %>% 
+  head()
+```
+
+...
+
+The black bubbles are a bit hard to read, the comparison would be easier with a bit more visual differentiation.
+
+### Questions for the static figures:
+
+1. *Answer: why does it make sense to have a log10 scale (`scale_x_log10()`) on the x axis?* (hint: try to comment it out and observe the result)
+
+Answer: By using the log10 scale for the x axis which shows "GDP per capita" we see a wider range of GDP, which is good in a case like this where there are many different datapoints (countries), sometimes with GDPs that vary very little. Thereby we are ably to visually still see the difference despite the closeness.
+
+2. *Answer: In Figure 1: Who is the outlier (the richest country in 1952) far right on the x axis?* 
+
+Answer: The richest country in 1952 (the outlier on the far right on the x axis) is Kuwait. To find this out I used the following function: 
+
+"subset(gapminder, year == 1952) %>% 
+  arrange(desc(gdpPercap)) %>% 
+  head()"
+
+3. *Fix Figures 1 and 2: Differentiate the **continents** by color, and fix the axis labels and units to be more legible (**Hint**: the 2.50e+08 is so called "scientific notation". You want to eliminate it.)*
+
+4. *Answer: What are the five richest countries in the world in 2007?*
+
+Answer: The 5 richest countries in 2007: Norway, Kuwait, Singapore, United States, Ireland.
+
+We find this out by running the same function as in question 2, simply changing it to "2007":
+
+"subset(gapminder, year == 2007) %>% 
+  arrange(desc(gdpPercap)) %>% 
+  head()"
+
+
+##  Make it move!
+
+The comparison would be easier if we had the two graphs together, animated. We have a lovely tool in R to do this: the `gganimate` package. Beware that there may be other packages your operating system needs in order to glue interim images into an animation or video. Read the messages when installing the package.
+
+Also, there are *two* ways of animating the gapminder ggplot.
+
+### Option 1: Animate using transition_states() 
+
+The first step is to create the object-to-be-animated
+```{r anim1 start}
+
+options(scipen = 999)
+
+anim <- ggplot(gapminder, aes(gdpPercap, lifeExp, size = pop/1000000)) +
+  geom_point(aes(color = continent)) +
+  scale_x_log10() +
+  transition_time(year)+
+  ggtitle("World from 1952-2007") +
+  labs(x = "GDP per capita",
+       y = "Life expectancy")
+anim
+```
+
+...
+
+This plot collates all the points across time. The next step is to split it into years and animate it. This may take some time, depending on the processing power of your computer (and other things you are asking it to do). Beware that the animation might appear in the bottom right 'Viewer' pane, not in this rmd preview. You need to `knit` the document to get the visual inside an html file.
+
+```{r anim1}
+anim + transition_states(year, 
+                      transition_length = 1,
+                      state_length = 1)
+
+```
+...
+
+Notice how the animation moves jerkily, 'jumping' from one year to the next 12 times in total. This is a bit clunky, which is why it's good we have another option. 
+
+
+### Option 2 Animate using transition_time()
+This option smooths the transition between different 'frames', because it interpolates and adds transitional years where there are gaps in the timeseries data.
+
+```{r anim2}
+
+options(scipen = 999)
+
+anim2 <- ggplot(gapminder, aes(gdpPercap, lifeExp, size = pop/1000000)) +
+  geom_point(aes(color = continent)) +
+  scale_x_log10() + # convert x to log scale
+  transition_time(year) +
+  ggtitle("World from 1952-2007") +
+  labs(x = "GDP per capita",
+       y = "Life expectancy")
+theme(text = element_text(size=18))
+anim2
+
+
+lex <- read.csv("lex.csv", check.names = FALSE)
+
+lex_long <- lex %>%
+  pivot_longer(
+    cols = -c(geo, name),
+    names_to = "year",
+    values_to = "lifeExp")
+
+lex_long
+
+lex_long$year <- as.numeric(lex_long$year)
+
+ggplot(subset(lex_long, year %in% c(1996, 2026)),
+       aes(x = lifeExp, colour = factor(year))) +
+  geom_density() +
+  ggtitle("Life expectancy: 1996 vs 2026") +
+  labs(x = "Life expectancy",
+       colour = "Year") +
+  theme(text = element_text(size = 18)) +
+  theme_bw()
+
+
+gdp <- read.csv("gdp_pcap.csv", check.names = FALSE)
+
+gdp_long <- gdp %>%
+  pivot_longer(
+    cols = -c(geo, name),
+    names_to = "year",
+    values_to = "gdpPercap")
+  
+gdp_long$year <- as.numeric(gdp_long$year)
+
+ggplot(subset(gdp_long, year %in% c(1996, 2020)),
+       aes(x = gdpPercap, colour = factor(year))) +
+  geom_density() +
+  scale_x_log10() +
+  ggtitle("GDP per capita: 1996 vs 2020") +
+  labs(x = "GDP per capita",
+       colour = "Year") +
+  theme(text = element_text(size = 18)) +
+  theme_bw()
+
+```
+
+
+The much smoother movement in Option 2 will be much more noticeable if you add a title to the chart, that will page through the years corresponding to each frame.
+
+Now, choose one of the animation options and get it to work. You may need to troubleshoot your installation of `gganimate` and other packages 
+
+### Tasks for the animations:
+
+5. *Can you add a title to one or both of the animations above that will change* 
+ *in sync with the animation?* *(**Hint**: search labeling for `transition_states()` and `transition_time()` functions respectively)*
+
+
+6. *Can you made the axes' labels and units more readable? Consider expanding the abbreviated labels as well as the scientific notation in the legend and x axis to whole numbers. Also, differentiate the countries from different continents by color*
+
+
+### Final Question
+7. **Is the world a better place today than it was in the year you were born?** *Answer this question using the gapminder data.  Define better either as more prosperous, more free, more healthy, or suggest another measure that you can get from gapminder. Submit a 250 word answer with an illustration to Brightspace. Include a URL in your Brightspace submission that links to the coded solutions in Github. [Hint: if you wish to have more data than is in the filtered gapminder, you can load either the `gapminder_unfiltered` dataset or download more historical data at https://www.gapminder.org/data/ ]*
+
+
