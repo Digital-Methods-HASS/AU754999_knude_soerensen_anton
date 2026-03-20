@@ -178,8 +178,6 @@ lex_long <- lex %>%
     names_to = "year",
     values_to = "lifeExp")
 
-lex_long
-
 lex_long$year <- as.numeric(lex_long$year)
 
 ggplot(subset(lex_long, year %in% c(1996, 2026)),
@@ -202,11 +200,11 @@ gdp_long <- gdp %>%
   
 gdp_long$year <- as.numeric(gdp_long$year)
 
-ggplot(subset(gdp_long, year %in% c(1996, 2020)),
+ggplot(subset(gdp_long, year %in% c(1996, 2026)),
        aes(x = gdpPercap, colour = factor(year))) +
   geom_density() +
   scale_x_log10() +
-  ggtitle("GDP per capita: 1996 vs 2020") +
+  ggtitle("GDP per capita: 1996 vs 2026") +
   labs(x = "GDP per capita",
        colour = "Year") +
   theme(text = element_text(size = 18)) +
