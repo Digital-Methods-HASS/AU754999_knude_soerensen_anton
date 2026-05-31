@@ -18,6 +18,7 @@ How did the sentiment towards immigrant workers (‘gæstearbejdere’/’fremme
 
 The datasets from Folketingstidende are from four years: 1970, 74, 78 and 80. This covers a period of ten years, with 1970 being a year still with a booming economy, and the subsequent years being affected by the oil crisis.
 
+
 ## How to reproduce the analysis
 
 1. Open the repository in RStudio.
@@ -36,3 +37,8 @@ Original newspaper texts, Mediestream source images, PDFs, facsimiles and infras
 ## Limitations
 
 The corpus is shaped by Mediestream search results. Because of copyright, we could not use a tool to download large datasets containing files from Mediestream, unless they were more than 140 years old. We could therefore not make a thorough sentiment comparison between the data folk Folketinget and large datasets from Mediestream.
+
+
+## Week 8 regex SAFI (for examiners only)
+
+For the examiners: IF you go to the week8 folder, you can copy permalinks for the solutions in OpenRefine 
