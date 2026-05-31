@@ -1,0 +1,205 @@
+---
+title: "Sentiment analysis of Folketingstidende, regarding guestworkers in Denmark"
+author: "Anton Knude Soerensen & Benjamin Lykke Christensen"
+date: "2026-05-25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message=FALSE)
+```
+
+## Install Sentida and related packages
+
+Note: When running the next codechunk, RStudio might give a message saying that it is best to restart RStudio.
+We were unable to do that, but the code was run correctly, and could be used for following codechucnks.
+
+```{r}
+
+# Install 'rlang' (package necessary for installing Sentida)
+#install.packages("rlang")
+#packageVersion("rlang")
+
+# Install devtools to allow downloading from GitHub
+#if(!require("devtools")) install.packages("devtools")
+
+# Install Sentida
+devtools::install_github("Guscode/Sentida")
+
+# Install tidyverse and tidytext for data manipulation and sentence splitting
+#install.packages("tidyverse")
+#install.packages("tidytext")
+
+# For MAC users: Force R to recognize Danish characters (æ, ø, å)
+Sys.setlocale(category = "LC_ALL", locale = "UTF-8")
+
+# Load necessary libraries
+library(tidyverse)
+library(tidytext)
+library(Sentida)
+```
+
+## Upload datasets and tokenize the texts
+
+We are working with datasets from 4 years in Folketinget, extracted from Folketinget's archive 'Folketingstidende' (shortened as 'FT').
+
+In 1974 there was a change of government, and therefore there are 2 datasets, which we will fuse into 1 dataset.
+
+```{r, eval=TRUE}
+
+# Load and fuse all datasets
+
+FT1970 <- read_delim("Data/19701.csv", delim = ";", locale = locale(encoding = "ISO-8859-1")) %>% mutate(Year = 1970)
+
+FT19741 <- read_delim("Data/19741.csv", delim = ";", locale = locale(encoding = "ISO-8859-1")) %>% mutate(Year = 1974)
+
+FT19742 <- read_delim("Data/19742.csv", delim = ";", locale = locale(encoding = "ISO-8859-1")) %>% mutate(Year = 1974)
+
+FT1978 <- read_delim("Data/19781.csv", delim = ";", locale = locale(encoding = "ISO-8859-1")) %>% mutate(Year = 1978)
+
+FT1980 <- read_delim("Data/19801.csv", delim = ";", locale = locale(encoding = "ISO-8859-1")) %>% mutate(Year = 1980)
+
+# Fuse the 2 datasets from 1974 into 1
+FT1974 <- bind_rows(FT19741, FT19742)
+
+# Fuse every dataset into one master dataset containing all four years
+FT_all_years <- bind_rows(FT1970, FT19741, FT19742, FT1978, FT1980)
+```
+
+## Filter keywords and run sentiment (for all years) using Sentida
+
+In the following codechunk, we isolate each cell containing the word 'gæstearbejd*', and then isolate each cell containing the word 'fremmedarbejd*'. We then calculate the mean sentiment score for each cell, using Sentida.
+
+```{r, eval=TRUE}
+
+# Add danish stopwordlist, so the sentiment is not muddled by too many neutral words
+
+#install.packages("stopwords")
+library(stopwords)
+stop_pattern <- paste0("\\b(", paste(stopwords("da"), collapse = "|"), ")\\b")
+stop_pattern <- str_replace(stop_pattern, "\\|ikke\\|", "|")
+
+# Extract rows for 'gæstearbejd*' and calculate individual scores
+gaest_all <- FT_all_years %>%
+  filter(str_detect(indhold, regex("gæstearbejd", ignore_case = TRUE))) %>%
+  mutate(indhold_clean = str_remove_all(indhold, regex(stop_pattern, ignore_case = TRUE))) %>%
+  mutate(sentiment_score = map_dbl(indhold_clean, ~ sentida(.x, output = "mean")))
+
+# Extract rows for 'fremmedarbejd*' and calculate individual scores
+fremmed_all <- FT_all_years %>%
+  filter(str_detect(indhold, regex("fremmedarbejd", ignore_case = TRUE))) %>%
+  mutate(indhold_clean = str_remove_all(indhold, regex(stop_pattern, ignore_case = TRUE))) %>%
+  mutate(sentiment_score = map_dbl(indhold_clean, ~ sentida(.x, output = "mean")))
+```
+
+## Compare the years (summary tables)
+
+Now that we have calculated the mean sentiment score for each cell, we then combine these and calculate the mean sentiment score for each year, and create summary tables.
+
+ 
+```{r, eval=TRUE}
+# By using group_by(Year), R automatically calculates the mean and counts for each year separately!
+
+gaest_summary <- gaest_all %>%
+  group_by(Year) %>%
+  summarise(
+    Mentions = n(),
+    Average_Sentiment = mean(sentiment_score, na.rm = TRUE)
+  )
+
+fremmed_summary <- fremmed_all %>%
+  group_by(Year) %>%
+  summarise(
+    Mentions = n(),
+    Average_Sentiment = mean(sentiment_score, na.rm = TRUE)
+  )
+
+# Combine the two separate summary datasets into one wide dataset
+unified_overview <- gaest_summary %>%
+  select(Year, Gæstearbejd_Mean = Average_Sentiment) %>%
+  inner_join(
+    fremmed_summary %>% select(Year, Fremmedarbejd_Mean = Average_Sentiment), 
+    by = "Year"
+  )
+
+view(unified_overview)
+```
+
+## Sentiment analysis using Sentida
+
+In the following codechunk, we use ggplot2 to create a bar chart, comparing the mean sentiment scores from each year, to get a tidy overview.
+
+```{r, eval=TRUE}
+
+# Combine the summaries to build a clean multi-year plot
+plot_data_all <- bind_rows(
+  gaest_summary %>% mutate(Keyword = "Gæstearbejd*"),
+  fremmed_summary %>% mutate(Keyword = "Fremmedarbejd*")
+)
+
+# Generate a side-by-side comparison bar chart for all years
+ggplot(plot_data_all, aes(x = factor(Year), y = Average_Sentiment, fill = Keyword)) +
+  geom_col(position = "dodge", width = 0.6) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black", alpha = 0.4) +
+  labs(
+    title = "Sentida Sentiment Comparison Across Years (1970-1980)",
+    x = "Year",
+    y = "Average Sentiment Score (Mean)"
+  ) +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set2")
+```
+
+## Sentiment analysis of articles about guestworkers
+
+```{r, eval=TRUE}
+
+# Load each of the four articles
+# Add a 'Type' column so we can tell them apart once we fuse them
+neg_gaest_raw <- read_csv("Data/Article_negative_gaestearbejder.csv", col_names = FALSE) %>% 
+  rename(sentence = 1) %>% 
+  mutate(Type = "Negative Gæstearbejder")
+pos_gaest_raw <- read_csv("Data/Article_positive_gaestearbejder.csv", col_names = FALSE) %>% 
+  rename(sentence = 1) %>% 
+  mutate(Type = "Positive Gæstearbejder")
+neg_frem_raw  <- read_csv("Data/Article_negative_fremmedarbejder.csv", col_names = FALSE) %>% 
+  rename(sentence = 1) %>% 
+  mutate(Type = "Negative Fremmedarbejder")
+pos_frem_raw  <- read_csv("Data/Article_positive_fremmedarbejder.csv", col_names = FALSE) %>% 
+  rename(sentence = 1) %>% 
+  mutate(Type = "Positive Fremmedarbejder")
+
+# Combine article datasets into one dataset
+articles_combined <- bind_rows(neg_gaest_raw, pos_gaest_raw, neg_frem_raw, pos_frem_raw)
+
+# Run the Sentida sentiment analysis with stopwords added
+# This calculates the mean score for each article
+articles_sentida_combined <- articles_combined %>%
+  mutate(sentence_clean = str_remove_all(sentence, regex(stop_pattern, ignore_case = TRUE))) %>%
+  mutate(sentiment_score = map_dbl(sentence_clean, ~ sentida(.x, output = "mean")))
+
+# 4. Create a clean overview of your control scores
+articles_sentida_overview <- articles_sentida_combined %>%
+  select(Type, sentiment_score)
+
+articles_sentida_overview
+```
+
+## Find out how often each keyword was used in the dataset
+
+```{r, eval=TRUE}
+
+# Count total mentions of each word across the entire dataset
+word_counts_by_year <- FT_all_years %>%
+  group_by(Year) %>%
+  summarise(
+    Gaestearbejd_Mentions = sum(str_count(indhold, regex("gæstearbejd", ignore_case = TRUE)), na.rm = TRUE),
+    Fremmedarbejd_Mentions = sum(str_count(indhold, regex("fremmedarbejd", ignore_case = TRUE)), na.rm = TRUE)
+  )
+
+# Show result
+head(word_counts_by_year)
+
+```
+Copyright: CC BY 4.0
