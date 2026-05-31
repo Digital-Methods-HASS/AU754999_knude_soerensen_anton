@@ -1,4 +1,4 @@
-# Link to where the Folketingstidende datasets can be downloaded
+# Link to where the Folketingstidende datasets (1978 & 80) can be downloaded
 
 ## There was an issue with the size of two of the datasets
 
