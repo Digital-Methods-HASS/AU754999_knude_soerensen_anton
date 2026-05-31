@@ -18,6 +18,10 @@ How did the sentiment towards immigrant workers (‘gæstearbejdere’/’fremme
 
 The datasets from Folketingstidende are from four years: 1970, 74, 78 and 80. This covers a period of ten years, with 1970 being a year still with a booming economy, and the subsequent years being affected by the oil crisis.
 
+## Issue uploading datasets from Folketingstidende
+
+The datasets from 1978 and 1980 were too large to upload to GitHub. To download the dataset from 1978 go to this link: https://sciencedata.dk/shared/0a89af6ad38c3fd700db36754fd63dad
+Link for 1980 Folketingstidende dataset: https://sciencedata.dk/shared/d874dedd5217735d3f5e55c7e072088a
 
 ## How to reproduce the analysis
 
