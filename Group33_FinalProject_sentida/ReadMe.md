@@ -8,6 +8,14 @@ This repository contains the digital product for Group 33’s final project in D
 
 How did the sentiment towards immigrant workers (‘gæstearbejdere’/’fremmedarbejdere’) in Denmark change in the Danish Parlament (Folketinget) in relation to the oil crisis of 1973 and 1978, and is the Danish sentiment analysis tool Sentida sufficient to analyse this change in sentiment?
 
+## Result
+
+Fromm all of our close reading, regarding the historical context of immigrant workers in Denmark, the oil crisis, and the subsecuent economic downtown, we thought it would make sense for the overall sentiment towards immigrant workers to worsen. But all we could clearly conclude, was that Sentida is an insufficient tool for precise textual sentiment analysis.
+
+Sentida is a danish lexicon-based tool for sentiment analysis, which contains many words with sentiments added, but is incapable of analyzing the sentiment of the word while considering the context within which it is written. All datasets were evaluated by Sentida as having a slightly positive value, but close to cero, so neutral. This was even the case for the four articles we had selected from Mediestream which to our reading contained either extremely positive or negative sentiments. So it seems that Sentida is not good at all for analyzing the precise sentiments in texts.
+
+But we did discover that even though all values were close to neutral, the two positive article had a sentiment score more than five times that of the negative articles. Sentida might then be used efficienty to detect whether there is an overall large sentiment difference between texts, even if it cannot say anything more precise. But to properly deduce if it indeed is efficient at analyzing such overall sentiment pattern, one would need to test that on a larger quantity of text, preferably do close reading of the texts, and maybe redact some content, to get an idea of clear predefined sentiments which the Sentida analysis would then be compared to.
+
 ## Repository structure
 
 - `data/`: Contains selected datasets from Mediestream, used to extract benchmark values for the positive and negative sentiment regardng each keyword. The articles have been manually transcribed into Google Sheet, and then converted into csv files, which could easily be uploaded in RStudio. data/ also contains datasets from Folketingstidende Forhandlinger. The datasets have been restructured with the kind help of Max Odsbjerg Petersen. This link will lead you to a GitHub with a thorough go through of how to restructure the datasets from Folketinget: https://github.com/KUBDatalab/folketingsreferater/blob/main/ekstraher_funktionen.R
