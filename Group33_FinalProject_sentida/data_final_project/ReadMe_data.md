@@ -2,4 +2,5 @@
 
 ## There was an issue with the size of two of the datasets
 
-At this link, all restructured datasets are available are ready for download: https://filesender.deic.dk/filesender/?s=download&token=37c9cbb9-36df-40eb-a651-f4967021c587
+Link for Folketingstidende 1978 dataset: https://silo1.sciencedata.dk/shared/0a89af6ad38c3fd700db36754fd63dad
+Link for Folketingstidende 1980 dataset: https://sciencedata.dk/shared/d874dedd5217735d3f5e55c7e072088a
