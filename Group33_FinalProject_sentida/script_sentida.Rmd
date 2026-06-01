@@ -1,5 +1,5 @@
 ---
-title: "Sentiment analysis of Folketingstidende, regarding guestworkers in Denmark"
+title: "Sentiment towards immigrant workers in Denmark: Parliamentary discourse and the oil crisis of 1973 and 1978"
 author: "Anton Knude Soerensen & Benjamin Lykke Christensen"
 date: "2026-05-25"
 output: html_document
